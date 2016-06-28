@@ -168,8 +168,8 @@ class ViewController: UIViewController {
         newMouthPosition.y = newMouthPosition.y - correction
         let mouthAngle = -CGFloat(mouthAngle) * CGFloat(M_PI) / 180.0
         
-        positionPoints[numPoints % ViewController.pointNumber] = newMouthPosition
-        numPoints += 1
+//        positionPoints[numPoints % ViewController.pointNumber] = newMouthPosition
+//        numPoints += 1
         
         dispatch_async(dispatch_get_main_queue()) {
 //            if self.numPoints < ViewController.pointNumber {
