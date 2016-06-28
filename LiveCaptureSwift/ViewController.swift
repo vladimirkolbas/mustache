@@ -26,7 +26,7 @@ class ViewController: UIViewController {
     private var ciSize: CGSize!
     private let screenSize = UIScreen.mainScreen().bounds.size
     
-    private static let pointNumber = 6
+    private static let pointNumber = 4
     private var positionPoints = Array<CGPoint>(count: pointNumber, repeatedValue: .zero)
     private var numPoints = 0
     private var frame = 0
@@ -42,11 +42,12 @@ class ViewController: UIViewController {
         return frontDevices.first!
     }()
     
+    private static let detectorAccuracy = CIDetectorAccuracyHigh
     private lazy var detector: CIDetector = {
         return CIDetector(
             ofType: CIDetectorTypeFace,
             context: self.faceContext,
-            options: [CIDetectorAccuracy : CIDetectorAccuracyHigh]
+            options: [CIDetectorAccuracy : detectorAccuracy]
         )
     }()
     
@@ -171,11 +172,11 @@ class ViewController: UIViewController {
         numPoints += 1
         
         dispatch_async(dispatch_get_main_queue()) {
-            if self.numPoints < ViewController.pointNumber {
+//            if self.numPoints < ViewController.pointNumber {
                 self.beardImageView.center = newMouthPosition
-            } else {
-                self.beardImageView.center = self.average(self.positionPoints)
-            }
+//            } else {
+//                self.beardImageView.center = self.average(self.positionPoints)
+//            }
             
             self.beardImageView.transform = CGAffineTransformMakeRotation(mouthAngle)
         }
