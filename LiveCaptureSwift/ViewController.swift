@@ -14,19 +14,27 @@ enum Eye {
 }
 
 class ViewController: UIViewController {
-
+    
+    // MARK: - Properties
+    
     private let faceQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
-    
     private let sampleQueue = dispatch_queue_create("VideoSampleQueue", DISPATCH_QUEUE_SERIAL)
-    
     private let faceContext = CIContext(options: nil)
+    private let session = AVCaptureSession()
+    private var token: dispatch_once_t = 0
+
+    private var ciSize: CGSize!
+    private let screenSize = UIScreen.mainScreen().bounds.size
+    
+    private static let pointNumber = 6
+    private var positionPoints = Array<CGPoint>(count: pointNumber, repeatedValue: .zero)
+    private var numPoints = 0
+    private var frame = 0
     
     private lazy var previewLayer: AVCaptureVideoPreviewLayer = {
         let previewLayer = AVCaptureVideoPreviewLayer(session: self.session)
         return previewLayer
     }()
-    
-    private let session = AVCaptureSession()
     
     private lazy var device: AVCaptureDevice = {
         let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo) as! [AVCaptureDevice]
@@ -41,10 +49,6 @@ class ViewController: UIViewController {
             options: [CIDetectorAccuracy : CIDetectorAccuracyHigh]
         )
     }()
-    
-    var calculating = false
-    
-    private var token: dispatch_once_t = 0
     
     private lazy var rightEyeView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 4, height: 4))
@@ -71,14 +75,7 @@ class ViewController: UIViewController {
         return beardImageView
     }()
     
-    private var ciSize: CGSize!
-    
-    private let screenSize = UIScreen.mainScreen().bounds.size
-    
-    private static let pointNumber = 6
-    private var positionPoints = Array<CGPoint>(count: pointNumber, repeatedValue: .zero)
-    private var numPoints = 0
-    private var frame = 0
+    // MARK: - implementation
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -106,7 +103,7 @@ class ViewController: UIViewController {
         view.addSubview(mouthView)
         view.addSubview(beardImageView)
     }
-
+    
     private func drawEye(eye: Eye, atPosition position: CGPoint) {
         var newPosition = position
         newPosition.x = ciSize.width - position.x
@@ -147,7 +144,7 @@ class ViewController: UIViewController {
         
         newMouthPosition.x = newMouthPosition.x * screenSize.width / ciSize.width - 15
         newMouthPosition.y = newMouthPosition.y * screenSize.height / ciSize.height - 1
-
+        
         var newLeftEyePosition = leftEyePosition
         newLeftEyePosition.x = ciSize.width - leftEyePosition.x
         newLeftEyePosition.y = -leftEyePosition.y
@@ -166,22 +163,21 @@ class ViewController: UIViewController {
         let distance = newMouthPosition.y - midEyeY
         let factor: CGFloat = 0.1
         let correction = distance * factor
-
+        
         newMouthPosition.y = newMouthPosition.y - correction
         let mouthAngle = -CGFloat(mouthAngle) * CGFloat(M_PI) / 180.0
-
-//        positionPoints[numPoints % ViewController.pointNumber] = newMouthPosition
-//        numPoints += 1
-        self.calculating = false
+        
+        positionPoints[numPoints % ViewController.pointNumber] = newMouthPosition
+        numPoints += 1
+        
         dispatch_async(dispatch_get_main_queue()) {
-//            if self.numPoints < ViewController.pointNumber {
+            if self.numPoints < ViewController.pointNumber {
                 self.beardImageView.center = newMouthPosition
-//            } else {
-//                self.beardImageView.center = self.average(self.positionPoints)
-//            }
+            } else {
+                self.beardImageView.center = self.average(self.positionPoints)
+            }
             
             self.beardImageView.transform = CGAffineTransformMakeRotation(mouthAngle)
-//            self.calculating = false
         }
     }
     
@@ -203,22 +199,21 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             self.ciSize = ciImage.extent.size;
         }
         
-        
-            dispatch_async(faceQueue) {
-//                if self.calculating { return }
-                if self.frame % 4 == 0 {
-                    if let feature = self.detector.featuresInImage(ciImage).first as? CIFaceFeature where
+        dispatch_async(faceQueue) {
+            
+            if self.frame % 4 == 0 {
+                if let feature = self.detector.featuresInImage(ciImage).first as? CIFaceFeature where
                     feature.hasLeftEyePosition && feature.hasRightEyePosition && feature.hasMouthPosition && feature.hasFaceAngle {
-//                        self.calculating = true
-                        self.drawEye(.Left, atPosition: feature.leftEyePosition)
-                        self.drawEye(.Right, atPosition: feature.rightEyePosition)
-                        self.drawMouth(atPosition: feature.mouthPosition, atAngle: feature.faceAngle)
-                        self.positionBeard(feature.leftEyePosition, rightEyePosition: feature.rightEyePosition, mouthPosition: feature.mouthPosition, mouthAngle: CGFloat(feature.faceAngle))
-                    }
+                    
+                    self.drawEye(.Left, atPosition: feature.leftEyePosition)
+                    self.drawEye(.Right, atPosition: feature.rightEyePosition)
+                    self.drawMouth(atPosition: feature.mouthPosition, atAngle: feature.faceAngle)
+                    self.positionBeard(feature.leftEyePosition, rightEyePosition: feature.rightEyePosition, mouthPosition: feature.mouthPosition, mouthAngle: CGFloat(feature.faceAngle))
                 }
             }
-        
-            self.frame += 1
         }
+        
+        self.frame += 1
+    }
     
 }
