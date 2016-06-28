@@ -200,9 +200,9 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             self.ciSize = ciImage.extent.size;
         }
         
-        dispatch_async(faceQueue) {
-            
-            if self.frame % 4 == 0 {
+//        dispatch_async(faceQueue) {
+        
+//            if self.frame % 4 == 0 {
                 if let feature = self.detector.featuresInImage(ciImage).first as? CIFaceFeature where
                     feature.hasLeftEyePosition && feature.hasRightEyePosition && feature.hasMouthPosition && feature.hasFaceAngle {
                     
@@ -210,8 +210,8 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
                     self.drawEye(.Right, atPosition: feature.rightEyePosition)
                     self.drawMouth(atPosition: feature.mouthPosition, atAngle: feature.faceAngle)
                     self.positionBeard(feature.leftEyePosition, rightEyePosition: feature.rightEyePosition, mouthPosition: feature.mouthPosition, mouthAngle: CGFloat(feature.faceAngle))
-                }
-            }
+//                }
+//            }
         }
         
         self.frame += 1
